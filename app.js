@@ -36,9 +36,13 @@ function showWarningPopup() {
 
 setTimeout(showWarningPopup, 500);
 
-// ======================== CONFIGURATION API MISTRAL AI ========================
-const MISTRAL_API_KEY = 'TSTlYdHui4PAsQLyaJJhJVjzZVt4ROKz';
-const MISTRAL_API_URL = 'https://api.mistral.ai/v1/chat/completions';
+// ======================== CONFIGURATION API BACKEND SÉCURISÉ ========================
+// URL du backend (à adapter selon votre environnement)
+const BACKEND_URL = window.location.hostname === 'localhost' 
+  ? 'http://localhost:3000'
+  : 'https://academie-penale-backend.onrender.com'; // À remplacer par votre URL de déploiement
+
+const API_ENDPOINT = `${BACKEND_URL}/api/generate`;
 
 // ======================== TEXTES OFFICIELS CAMEROUNAIS ========================
 const TEXTES_OFFICIELS = `CODE PENAL CAMEROUNAIS (LOI N°2016/007):
@@ -121,6 +125,35 @@ function showToast(msg, isError = false) {
   setTimeout(() => t.classList.remove('show'), 2500); 
 }
 
+// ======================== APPEL SÉCURISÉ À L'API ========================
+async function callMistralAPI(messages, maxTokens = 1200, temperature = 0.7) {
+  try {
+    const response = await fetch(API_ENDPOINT, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        messages: messages,
+        max_tokens: maxTokens,
+        temperature: temperature,
+        model: 'mistral-small-latest'
+      })
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.error || `API Error ${response.status}`);
+    }
+
+    const data = await response.json();
+    return data.data.choices?.[0]?.message?.content || '';
+  } catch (error) {
+    console.error('API Call Error:', error);
+    throw error;
+  }
+}
+
 // ======================== GÉNÉRATION D'UN CAS PAR MISTRAL AI ========================
 async function generateCase() {
   if (appState.isGenerating) return;
@@ -170,29 +203,12 @@ Reponds UNIQUEMENT au format JSON valide, sans aucun texte avant ou apres:
 }`;
 
   try {
-    const response = await fetch(MISTRAL_API_URL, {
-      method: 'POST',
-      headers: { 
-        'Content-Type': 'application/json', 
-        'Authorization': `Bearer ${MISTRAL_API_KEY}`
-      },
-      body: JSON.stringify({
-        model: 'mistral-small-latest',
-        messages: [{ role: 'user', content: prompt }],
-        max_tokens: 1200,
-        temperature: 0.7
-      })
-    });
+    const content = await callMistralAPI(
+      [{ role: 'user', content: prompt }],
+      1200,
+      0.7
+    );
     
-    if (!response.ok) {
-      const errorText = await response.text();
-      throw new Error(`API Error ${response.status}: ${errorText.substring(0, 200)}`);
-    }
-    
-    const data = await response.json();
-    let content = data.choices?.[0]?.message?.content || '';
-    
-    content = content.trim();
     const jsonMatch = content.match(/\{[\s\S]*\}/);
     if (jsonMatch) {
       let caseData;
@@ -246,12 +262,12 @@ Reponds UNIQUEMENT au format JSON valide, sans aucun texte avant ou apres:
       throw new Error('Format JSON invalide');
     }
   } catch (err) {
-    console.error('Erreur Mistral API:', err);
+    console.error('Erreur génération:', err);
     document.getElementById('caseBody').innerHTML = `
       <div style="text-align:center; padding:40px; color: var(--red);">
         <div style="font-size: 48px; margin-bottom: 16px;">⚠️</div>
         <p>Erreur: ${err.message}</p>
-        <p style="margin-top: 12px;">Verifiez votre connexion et votre clé API Mistral.</p>
+        <p style="margin-top: 12px;">Verifiez votre connexion et que le serveur est en ligne.</p>
         <button class="btn-gold" id="retryBtn" style="margin-top: 20px;">🔄 Reessayer</button>
       </div>
     `;
@@ -371,33 +387,19 @@ Donne une correction complete avec:
 Cite les articles. Utilise HTML. Sois pedagogique.`;
 
   try {
-    const response = await fetch(MISTRAL_API_URL, {
-      method: 'POST',
-      headers: { 
-        'Content-Type': 'application/json', 
-        'Authorization': `Bearer ${MISTRAL_API_KEY}`
-      },
-      body: JSON.stringify({
-        model: 'mistral-small-latest',
-        messages: [{ role: 'user', content: prompt }],
-        max_tokens: 1200,
-        temperature: 0.3
-      })
-    });
-    
-    if (!response.ok) {
-      throw new Error(`API Error ${response.status}`);
-    }
-    
-    const data = await response.json();
-    let aiReply = data.choices?.[0]?.message?.content || "Erreur de generation.";
-    aiReply = aiReply.replace(/\n/g, '<br>');
-    const aiHtml = `<div class="ai-correction"><div class="ai-header"><div class="ai-icon">📚</div><div><strong>Correction IA - Mistral AI</strong></div></div><div style="line-height: 1.8;">${aiReply}</div><br><hr><div class="doc-ref">⚠️ <strong>Attention :</strong> L'IA peut commettre des erreurs. Veuillez vérifier les articles cités dans les textes officiels.<br>Sources : Code penal camerounais (Loi n°2016/007) - Code de procedure penale (Loi n°2005/007)</div></div>`;
+    const aiReply = await callMistralAPI(
+      [{ role: 'user', content: prompt }],
+      1200,
+      0.3
+    );
+
+    const formattedReply = aiReply.replace(/\n/g, '<br>');
+    const aiHtml = `<div class="ai-correction"><div class="ai-header"><div class="ai-icon">📚</div><div><strong>Correction IA - Mistral AI</strong></div></div><div style="line-height: 1.8;">${formattedReply}</div><br><hr><div class="doc-ref">⚠️ <strong>Attention :</strong> L'IA peut commettre des erreurs. Veuillez vérifier les articles cités dans les textes officiels.<br>Sources : Code penal camerounais (Loi n°2016/007) - Code de procedure penale (Loi n°2005/007)</div></div>`;
     document.querySelector('.ai-correction').outerHTML = aiHtml;
     showToast('Correction IA generee - Verifiez les references');
   } catch (err) {
-    console.error('Erreur Mistral API correction:', err);
-    document.querySelector('.ai-correction').innerHTML = '<p>❌ Erreur de connexion a Mistral AI. Reessayez.</p>';
+    console.error('Erreur correction IA:', err);
+    document.querySelector('.ai-correction').innerHTML = '<p>❌ Erreur de connexion. Reessayez.</p>';
     showToast('Erreur IA', true);
   }
   appState.isStreaming = false;
