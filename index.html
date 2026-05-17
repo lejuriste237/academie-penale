@@ -2,734 +2,486 @@
 <html lang="fr">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Académie Pénale — Cas illimités · API Mistral AI · Droit camerounais</title>
-  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=IBM+Plex+Mono:wght@400;500&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <title>Académie Pénale · IA RAG Cameroun · Droit pénal & Procédure</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,300;400;500;600;700&family=Playfair+Display:ital,wght@0,500;1,500&display=swap" rel="stylesheet">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
   <style>
-    :root {
-      --bg: #0b0f1a;
-      --surface: #111827;
-      --surface2: #1a2236;
-      --surface3: #1f2d45;
-      --text: #e8edf5;
-      --muted: #7a8ba8;
-      --gold: #d4a853;
-      --gold-dim: rgba(212,168,83,0.15);
-      --green: #2dd4a0;
-      --green-dim: rgba(45,212,160,0.1);
-      --blue: #60a5fa;
-      --red: #f87171;
-      --border: rgba(255,255,255,0.07);
-      --radius: 18px;
-    }
-    * { margin: 0; padding: 0; box-sizing: border-box; }
-    body {
-      font-family: 'DM Sans', sans-serif;
-      background: var(--bg);
-      color: var(--text);
-      min-height: 100vh;
-    }
-    .wrapper { max-width: 1280px; margin: 0 auto; padding: 32px 20px 60px; }
-    .header {
-      display: flex; justify-content: space-between; flex-wrap: wrap;
-      gap: 20px; margin-bottom: 36px; padding-bottom: 28px;
-      border-bottom: 1px solid var(--border);
-    }
-    .header-left h1 { font-family: 'Playfair Display', serif; font-size: clamp(1.6rem, 3.5vw, 2.6rem); }
-    .header-left h1 em { color: var(--gold); font-style: italic; }
-    .header-subtitle { margin-top: 8px; font-size: 0.85rem; color: var(--muted); font-family: 'IBM Plex Mono', monospace; }
-    .ai-badge {
-      display: inline-flex; align-items: center; gap: 8px;
-      padding: 8px 16px; background: var(--gold-dim); border: 1px solid rgba(212,168,83,0.3);
-      border-radius: 999px; font-size: 0.78rem; color: var(--gold);
-    }
-    .ai-badge .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--green); animation: pulse 2s infinite; }
-    @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.3} }
-    .stats-bar {
-      display: grid; grid-template-columns: repeat(3, 1fr);
-      gap: 12px; margin-bottom: 24px;
-    }
-    .stat-box {
-      background: var(--surface); border: 1px solid var(--border);
-      border-radius: var(--radius); padding: 16px 20px;
-      display: flex; align-items: center; gap: 14px;
-    }
-    .stat-icon { font-size: 1.5rem; }
-    .stat-info .label { font-size: 0.7rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.05em; }
-    .stat-info .value { font-size: 1.5rem; font-weight: 700; color: var(--gold); font-family: 'Playfair Display', serif; }
-    .case-card {
-      background: var(--surface); border: 1px solid var(--border);
-      border-radius: var(--radius); overflow: hidden;
-    }
-    .case-header {
-      background: linear-gradient(135deg, #1a2236, #1f2d45);
-      padding: 24px; border-bottom: 1px solid var(--border);
-    }
-    .case-badges { display: flex; gap: 8px; margin-bottom: 16px; flex-wrap: wrap; }
-    .badge {
-      padding: 4px 12px; border-radius: 999px; font-size: 0.7rem;
-      font-family: 'IBM Plex Mono', monospace; border: 1px solid;
-    }
-    .badge-theme { background: rgba(96,165,250,0.15); color: var(--blue); border-color: rgba(96,165,250,0.3); }
-    .badge-difficulty { background: rgba(212,168,83,0.15); color: var(--gold); border-color: rgba(212,168,83,0.3); }
-    .badge-mode { background: rgba(45,212,160,0.15); color: var(--green); border-color: rgba(45,212,160,0.3); }
-    .case-title { font-family: 'Playfair Display', serif; font-size: 1.4rem; margin-bottom: 12px; }
-    .case-scenario {
-      background: rgba(0,0,0,0.3); padding: 16px; border-radius: 12px;
-      color: var(--muted); font-size: 0.95rem; line-height: 1.6;
-      border-left: 3px solid var(--gold);
-    }
-    .case-body { padding: 24px; display: flex; flex-direction: column; gap: 24px; }
-    .section-title {
-      font-family: 'IBM Plex Mono', monospace; font-size: 0.7rem;
-      color: var(--gold); text-transform: uppercase; letter-spacing: 0.1em;
-      margin-bottom: 12px;
-    }
-    .questions-list { list-style: none; }
-    .questions-list li {
-      background: var(--surface2); padding: 12px 16px; margin-bottom: 8px;
-      border-left: 3px solid var(--gold); border-radius: 10px;
-      font-size: 0.9rem;
-    }
-    .qcm-option { display: block; margin-bottom: 10px; cursor: pointer; }
-    .qcm-option input { display: none; }
-    .qcm-label {
-      display: flex; align-items: center; gap: 12px;
-      padding: 12px 16px; background: var(--surface2);
-      border: 1px solid var(--border); border-radius: 12px;
-      transition: all 0.2s;
-    }
-    .qcm-option input:checked + .qcm-label { border-color: var(--gold); background: var(--gold-dim); }
-    .qcm-option.correct .qcm-label { border-color: var(--green); background: var(--green-dim); color: var(--green); }
-    .qcm-option.wrong .qcm-label { border-color: var(--red); background: rgba(248,113,113,0.1); color: var(--red); }
-    .qcm-letter {
-      width: 28px; height: 28px; background: var(--surface3);
-      border-radius: 50%; display: flex; align-items: center; justify-content: center;
-      font-weight: bold; font-size: 0.8rem;
-    }
-    .feedback { padding: 14px; border-radius: 12px; margin-top: 12px; font-size: 0.9rem; }
-    .feedback.good { background: var(--green-dim); border: 1px solid var(--green); color: var(--green); }
-    .feedback.bad { background: rgba(248,113,113,0.1); border: 1px solid var(--red); color: var(--red); }
-    textarea {
-      width: 100%; background: var(--surface2); border: 1px solid var(--border);
-      border-radius: 12px; color: var(--text); padding: 14px;
-      font-size: 0.9rem; min-height: 180px; resize: vertical;
-      font-family: 'DM Sans', monospace;
-    }
-    textarea:focus { outline: none; border-color: var(--gold); }
-    .correction-block, .static-correction {
-      background: rgba(45,212,160,0.05); border-left: 3px solid var(--green);
-      border-radius: var(--radius); padding: 20px;
-      line-height: 1.6;
-    }
-    .ai-correction {
-      background: linear-gradient(135deg, rgba(124,58,237,0.1), rgba(45,212,160,0.05));
-      border: 1px solid rgba(124,58,237,0.3);
-      border-radius: var(--radius);
-      padding: 20px;
-    }
-    .ai-header { display: flex; align-items: center; gap: 12px; margin-bottom: 16px; }
-    .ai-icon { width: 36px; height: 36px; background: linear-gradient(135deg, #7c3aed, #5b21b6); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.2rem; }
-    .bottom-bar {
-      margin-top: 20px; background: var(--surface); border: 1px solid var(--border);
-      border-radius: var(--radius); padding: 20px;
-    }
-    .bottom-section { display: flex; flex-wrap: wrap; gap: 16px; align-items: flex-end; }
-    .bottom-filters { display: flex; gap: 12px; flex: 1; flex-wrap: wrap; }
-    .filter-group { display: flex; flex-direction: column; gap: 5px; min-width: 140px; }
-    .filter-group label { font-size: 0.7rem; color: var(--muted); text-transform: uppercase; font-family: 'IBM Plex Mono', monospace; }
-    select, button {
-      padding: 10px 16px; border-radius: 10px; border: none;
-      font-family: inherit; font-size: 0.85rem; cursor: pointer;
-    }
-    select { background: var(--surface2); color: var(--text); border: 1px solid var(--border); }
-    button { font-weight: 600; transition: all 0.2s; }
-    button:hover:not(:disabled) { transform: translateY(-1px); filter: brightness(1.1); }
-    button:disabled { opacity: 0.4; cursor: not-allowed; }
-    .btn-gold { background: linear-gradient(135deg, #d4a853, #b8862f); color: #0b0f1a; }
-    .btn-blue { background: linear-gradient(135deg, #60a5fa, #3b82f6); color: #0b0f1a; }
-    .btn-ai { background: linear-gradient(135deg, #7c3aed, #5b21b6); color: white; }
-    .btn-ghost { background: var(--surface2); border: 1px solid var(--border); color: var(--muted); }
-    .case-nav {
-      padding: 12px 24px; background: var(--surface2); border-top: 1px solid var(--border);
-      display: flex; justify-content: space-between; font-size: 0.75rem; color: var(--muted);
-      font-family: 'IBM Plex Mono', monospace;
-    }
-    .word-count { text-align: right; font-size: 0.7rem; color: var(--muted); margin-top: 6px; }
-    .toast {
-      position: fixed; bottom: 24px; right: 24px;
-      background: var(--surface); border: 1px solid var(--gold);
-      border-radius: 12px; padding: 12px 20px;
-      transform: translateY(120%); transition: transform 0.3s;
-      z-index: 1000;
-      font-size: 0.85rem;
-    }
-    .toast.show { transform: translateY(0); }
-    .hidden { display: none !important; }
-    footer { text-align: center; margin-top: 32px; font-size: 0.7rem; color: var(--muted); padding: 16px; }
-    .loading { display: inline-block; width: 16px; height: 16px; border: 2px solid var(--gold); border-radius: 50%; border-top-color: transparent; animation: spin 0.8s linear infinite; margin-left: 8px; }
-    @keyframes spin { to { transform: rotate(360deg); } }
-    .doc-ref { background: var(--surface2); border-radius: 8px; padding: 8px 12px; margin-top: 10px; font-size: 0.75rem; color: var(--blue); border-left: 2px solid var(--gold); }
-    
-    /* Pop-up d'avertissement */
+    * { font-family: 'Inter', sans-serif; }
+    .font-serif { font-family: 'Playfair Display', serif; }
     .warning-overlay {
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      background: rgba(0,0,0,0.8);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      z-index: 2000;
-      backdrop-filter: blur(5px);
+      position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+      background: rgba(0,0,0,0.85); backdrop-filter: blur(6px); z-index: 3000;
+      display: flex; align-items: center; justify-content: center;
     }
     .warning-modal {
-      background: var(--surface);
-      border: 1px solid var(--red);
-      border-radius: var(--radius);
-      max-width: 500px;
-      width: 90%;
-      padding: 28px;
-      text-align: center;
-      box-shadow: 0 25px 50px rgba(0,0,0,0.5);
-      animation: slideIn 0.3s ease;
+      background: #1f2937; border-left: 6px solid #f59e0b; max-width: 550px; width: 90%;
+      border-radius: 24px; padding: 28px; box-shadow: 0 30px 40px rgba(0,0,0,0.5);
     }
-    @keyframes slideIn {
-      from { transform: translateY(-50px); opacity: 0; }
-      to { transform: translateY(0); opacity: 1; }
+    .code-link-card {
+      transition: transform 0.2s, background 0.2s;
     }
-    .warning-icon {
-      font-size: 48px;
-      margin-bottom: 16px;
-    }
-    .warning-title {
-      font-size: 1.4rem;
-      font-weight: 700;
-      color: var(--red);
-      margin-bottom: 16px;
-    }
-    .warning-message {
-      font-size: 0.95rem;
-      line-height: 1.6;
-      margin-bottom: 20px;
-      color: var(--text);
-    }
-    .warning-message strong {
-      color: var(--gold);
-    }
-    .warning-checkbox {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 10px;
-      margin-bottom: 20px;
-      font-size: 0.85rem;
-    }
-    .warning-checkbox input {
-      width: 18px;
-      height: 18px;
-      cursor: pointer;
-    }
-    .warning-btn {
-      background: var(--gold);
-      color: #0b0f1a;
-      border: none;
-      padding: 12px 28px;
-      border-radius: 30px;
-      font-weight: bold;
-      cursor: pointer;
-      font-size: 1rem;
-      transition: all 0.2s;
-    }
-    .warning-btn:hover {
-      transform: scale(1.02);
-      filter: brightness(1.1);
+    .code-link-card:hover {
+      transform: translateY(-2px);
+      background: #374151;
     }
   </style>
 </head>
-<body>
-<div class="toast" id="toast">✅ API Mistral AI · Cas illimités</div>
-<div class="wrapper">
-  <header class="header">
-    <div class="header-left">
-      <h1>Académie <em>Pénale</em></h1>
-      <div class="header-subtitle">// Cas illimités · API Mistral AI · Droit camerounais</div>
-    </div>
-    <div class="ai-badge"><span class="dot"></span> Mistral AI Active</div>
-  </header>
-  <div class="stats-bar">
-    <div class="stat-box"><div class="stat-icon">📚</div><div class="stat-info"><div class="label">Cas étudiés</div><div class="value" id="seenCount">0</div></div></div>
-    <div class="stat-box"><div class="stat-icon">✅</div><div class="stat-info"><div class="label">QCM réussis</div><div class="value" id="goodCount">0</div></div></div>
-    <div class="stat-box"><div class="stat-icon">🎯</div><div class="stat-info"><div class="label">Taux réussite</div><div class="value" id="rateCount">—</div></div></div>
-  </div>
-  <div class="case-card">
-    <div class="case-header">
-      <div class="case-badges"><span class="badge badge-theme" id="badgeTheme">—</span><span class="badge badge-difficulty" id="badgeDifficulty">—</span><span class="badge badge-mode" id="badgeMode">—</span></div>
-      <h2 class="case-title" id="caseTitle">Bienvenue</h2>
-      <div class="case-scenario" id="caseScenario">Cliquez sur "Nouveau cas" pour générer un cas pratique.</div>
-    </div>
-    <div class="case-body" id="caseBody">
-      <div style="text-align:center; padding:40px; color: var(--muted);">
-        <div style="font-size: 48px; margin-bottom: 16px;">⚖️</div>
-        <p>Cas pratiques illimités générés par Mistral AI.</p>
-        <p style="margin-top: 12px;">Sélectionnez vos filtres et cliquez sur "Nouveau cas".</p>
-      </div>
-    </div>
-    <div class="case-nav hidden" id="caseNav"><span>Cas généré par IA</span><span id="casePool"></span></div>
-  </div>
-  <div class="bottom-bar">
-    <div class="bottom-section">
-      <div class="bottom-filters">
-        <div class="filter-group"><label>Thème</label><select id="themeSelect"><option value="Droit pénal">Droit pénal</option><option value="Police judiciaire">Police judiciaire</option><option value="Procédure pénale">Procédure pénale</option></select></div>
-        <div class="filter-group"><label>Difficulté</label><select id="difficultySelect"><option value="Débutant">Débutant</option><option value="Intermédiaire">Intermédiaire</option><option value="Avancé">Avancé</option></select></div>
-        <div class="filter-group"><label>Mode</label><select id="modeSelect"><option value="mixte">Mixte</option><option value="qcm">QCM</option><option value="redaction">Rédaction</option></select></div>
-      </div>
-      <div class="bottom-actions">
-        <button class="btn-gold" id="randomBtn">🎲 Nouveau cas</button>
-        <button class="btn-blue" id="showCorrectionBtn" disabled>📖 Correction modèle</button>
-        <button class="btn-ai" id="aiCorrectionBtn" disabled>✨ Correction IA</button>
-        <button class="btn-ghost" id="resetBtn">↺ Réinitialiser</button>
-      </div>
-    </div>
-  </div>
-  <footer>Plateforme pédagogique · Droit pénal camerounais · Usage strictement formatif. Par Georges Zenker</footer>
-</div>
+<body class="bg-gray-900 text-gray-100">
 
-<script>
-// ======================== POP-UP D'AVERTISSEMENT ========================
-function showWarningPopup() {
-  // Vérifier si l'utilisateur a déjà accepté l'avertissement
-  const warningAccepted = localStorage.getItem('warning_ia_accepted');
-  if (warningAccepted === 'true') return;
-  
-  const overlay = document.createElement('div');
-  overlay.className = 'warning-overlay';
-  overlay.innerHTML = `
-    <div class="warning-modal">
-      <div class="warning-icon">⚠️</div>
-      <div class="warning-title">Attention : L'IA peut se tromper</div>
-      <div class="warning-message">
-        L'intelligence artificielle utilisée pour générer les corrections peut <strong>confondre certains articles</strong> du Code pénal ou du Code de procédure pénale.
-        <br><br>
-        Il est <strong>fortement recommandé</strong> de toujours <strong>vérifier les articles cités</strong> dans les textes officiels avant de les utiliser pour vos révisions ou examens.
-        <br><br>
-        L'Académie Pénale vous invite à la prudence et à la vérification systématique des références juridiques.
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 py-6">
+    <!-- HEADER -->
+    <div class="flex flex-wrap justify-between items-center border-b border-gray-700 pb-5 mb-6">
+      <div>
+        <h1 class="font-serif text-3xl md:text-4xl font-bold text-amber-400">Académie <span class="text-white">Pénale</span></h1>
+        <p class="text-sm text-gray-400 mt-1">IA RAG • Génération aléatoire • Codes officiels consultables</p>
       </div>
-      <div class="warning-checkbox">
-        <input type="checkbox" id="dontShowAgain">
-        <label for="dontShowAgain">Ne plus afficher ce message</label>
+      <div class="flex gap-2 mt-2 sm:mt-0">
+        <span class="bg-emerald-900 text-emerald-300 px-3 py-1 rounded-full text-xs font-mono">🔍 Générateur aléatoire</span>
+        <span class="bg-amber-900 text-amber-300 px-3 py-1 rounded-full text-xs font-mono">📚 Codes officiels en ligne</span>
       </div>
-      <button class="warning-btn" id="closeWarningBtn">J'ai compris</button>
     </div>
-  `;
-  document.body.appendChild(overlay);
-  
-  document.getElementById('closeWarningBtn').onclick = () => {
-    const dontShow = document.getElementById('dontShowAgain').checked;
-    if (dontShow) {
-      localStorage.setItem('warning_ia_accepted', 'true');
+
+    <!-- STATS + MODE ACTIF -->
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+      <div class="bg-gray-800 p-4 rounded-xl border border-gray-700"><p class="text-xs text-gray-400">📘 CAS GÉNÉRÉS</p><p class="text-2xl font-bold text-amber-400" id="statCases">0</p></div>
+      <div class="bg-gray-800 p-4 rounded-xl border border-gray-700"><p class="text-xs text-gray-400">✅ NOTES MOYENNES</p><p class="text-2xl font-bold text-amber-400" id="statGood">0</p></div>
+      <div class="bg-gray-800 p-4 rounded-xl border border-gray-700"><p class="text-xs text-gray-400">🎯 TAUX RÉUSSITE</p><p class="text-2xl font-bold text-amber-400" id="statRate">—</p></div>
+      <div class="bg-gray-800 p-4 rounded-xl border border-gray-700"><p class="text-xs text-gray-400">⚡ MODE ACTIF</p><p class="text-lg font-semibold text-amber-400" id="activeModeLabel">Étudiant</p></div>
+    </div>
+
+    <!-- BARRE DE CONTRÔLE + FILTRES -->
+    <div class="flex flex-wrap gap-3 items-center justify-between bg-gray-800 p-4 rounded-xl shadow-lg mb-6 border border-gray-700">
+      <div class="flex flex-wrap gap-2">
+        <select id="modeSelect" class="bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-sm">
+          <option value="etudiant">🎓 Mode Étudiant (entraînement)</option>
+          <option value="examen">⏱️ Mode Examen (chronomètre, notation)</option>
+          <option value="magistrat">⚖️ Mode Magistrat (rédaction décision)</option>
+          <option value="concours">🏆 Mode Concours</option>
+        </select>
+        <select id="themeFilter" class="bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-sm">
+          <option value="Droit pénal général">Droit pénal général</option>
+          <option value="Infractions">Infractions pénales</option>
+          <option value="Procédure pénale">Procédure pénale</option>
+        </select>
+        <select id="difficultyFilter" class="bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-sm">
+          <option value="Débutant">Débutant</option>
+          <option value="Intermédiaire">Intermédiaire</option>
+          <option value="Avancé">Avancé</option>
+        </select>
+      </div>
+      <div class="flex gap-2">
+        <button id="newCaseBtn" class="bg-amber-600 hover:bg-amber-700 px-5 py-2 rounded-lg text-sm font-semibold shadow">🎲 Générer un cas</button>
+        <button id="resetStatsBtn" class="border border-gray-600 px-4 py-2 rounded-lg text-sm">↺ Réinit stats</button>
+        <button id="exportPDF" class="bg-gray-700 hover:bg-gray-600 px-4 py-2 rounded-lg text-sm">📄 Export PDF</button>
+        <button id="speechScenario" class="bg-indigo-800 hover:bg-indigo-700 px-3 py-2 rounded-lg text-sm">🔊 Lire le scénario</button>
+      </div>
+    </div>
+
+    <!-- CARD PRINCIPAL DU CAS -->
+    <div class="bg-gray-800 rounded-2xl border border-gray-700 overflow-hidden shadow-xl mb-8">
+      <div class="bg-gradient-to-r from-gray-900 to-gray-800 px-6 py-4 border-b border-gray-700">
+        <div class="flex flex-wrap gap-2 mb-2">
+          <span id="themeBadge" class="bg-gray-700 text-amber-400 text-xs px-3 py-1 rounded-full">Thème</span>
+          <span id="difficultyBadge" class="bg-gray-700 text-amber-400 text-xs px-3 py-1 rounded-full">Difficulté</span>
+          <span id="modeBadge" class="bg-amber-900 text-amber-300 text-xs px-3 py-1 rounded-full">Mode</span>
+          <span id="timerDisplay" class="hidden ml-auto font-mono text-red-400 bg-red-900/40 px-3 py-1 rounded-full"></span>
+        </div>
+        <h2 id="caseTitle" class="font-serif text-xl md:text-2xl font-bold text-white">Génération d'un cas...</h2>
+        <p id="caseScenario" class="text-gray-300 text-sm mt-2 italic"></p>
+      </div>
+      <div id="dynamicContent" class="p-6 space-y-6">
+        <div class="text-center py-12 text-gray-400">⏳ Génération automatique d'un cas pratique par l'IA...</div>
+      </div>
+      <div id="correctionPanel" class="border-t border-gray-700 p-5 bg-gray-900/50 hidden"></div>
+    </div>
+
+    <!-- Consultation des codes officiels - LIENS DIRECTS -->
+    <div class="bg-gray-800 rounded-xl p-5 border border-gray-700 mb-6">
+      <h3 class="text-amber-400 font-semibold mb-3 flex items-center gap-2">📜 SOURCES OFFICIELLES - TEXTES INTÉGRAUX</h3>
+      <div class="grid md:grid-cols-2 gap-4">
+        <a href="https://www.cameroontradeportal.cm/tradeportal/templates/Tip_accueil/docs/lois/LOI_PORTANT_CODE%20PENAL_INTEGRAL.pdf" 
+           target="_blank" 
+           rel="noopener noreferrer"
+           class="code-link-card bg-gray-700 hover:bg-gray-600 p-4 rounded-xl border border-amber-700/30 flex items-center gap-3 transition-all">
+          <div class="text-3xl">⚖️</div>
+          <div>
+            <div class="font-bold text-amber-400">Code pénal camerounais (intégral)</div>
+            <div class="text-xs text-gray-400">Loi n°2016/007 · Format PDF · Ouvrir dans un nouvel onglet</div>
+          </div>
+          <div class="ml-auto text-amber-500">📄→</div>
+        </a>
+        <a href="https://droit-et-politique-en-afrique.info/wp-content/uploads/2025/07/Code-de-procedure-penale-du-27-juillet-2005-Republique-du-Cameroun.pdf" 
+           target="_blank" 
+           rel="noopener noreferrer"
+           class="code-link-card bg-gray-700 hover:bg-gray-600 p-4 rounded-xl border border-amber-700/30 flex items-center gap-3 transition-all">
+          <div class="text-3xl">📖</div>
+          <div>
+            <div class="font-bold text-amber-400">Code de procédure pénale (intégral)</div>
+            <div class="text-xs text-gray-400">Loi n°2005/007 · Journal Officiel · Ouvrir dans un nouvel onglet</div>
+          </div>
+          <div class="ml-auto text-amber-500">📄→</div>
+        </a>
+      </div>
+      <p class="text-xs text-gray-500 mt-3 border-t border-gray-700 pt-3">⚠️ Ces liens redirigent vers les versions officielles des codes. Vérifiez toujours les textes à jour auprès des autorités compétentes.</p>
+    </div>
+
+    <!-- Mémoire pédagogique -->
+    <div class="bg-gray-800 rounded-xl p-4 border border-gray-700 text-sm">
+      <div class="flex justify-between items-center"><span class="font-semibold text-amber-400">📊 Mémoire pédagogique (erreurs fréquentes)</span><button id="clearMemory" class="text-xs text-red-400">Effacer historique</button></div>
+      <div id="weakTopics" class="flex flex-wrap gap-2 mt-2 text-xs"></div>
+    </div>
+    <footer class="text-center text-gray-500 text-xs mt-8 border-t border-gray-800 pt-6">Plateforme pédagogique · Droit pénal camerounais · Usage strictement formatif. Par Georges Zenker</footer>
+  </div>
+
+  <script>
+    // ======================== POP-UP D'AVERTISSEMENT ========================
+    function showVigilancePopup() {
+      if (localStorage.getItem('academie_ia_warning') === 'true') return;
+      const overlay = document.createElement('div');
+      overlay.className = 'warning-overlay';
+      overlay.innerHTML = `
+        <div class="warning-modal">
+          <div class="flex items-center gap-3 mb-4"><span class="text-4xl">⚠️</span><h2 class="text-xl font-bold text-amber-400">Attention : L'IA peut se tromper</h2></div>
+          <p class="text-gray-300 text-sm leading-relaxed mb-4">L'intelligence artificielle utilisée génère les cas pratiques et les corrections. Elle peut <strong class="text-amber-300">commettre des erreurs</strong> : confusions d'articles, interprétations inexactes.<br><br><strong>Recommandation officielle :</strong> vérifiez systématiquement les articles cités dans les <strong class="text-white">Codes officiels camerounais</strong> accessibles via les liens ci-dessus.<br><br>L'Académie Pénale vous invite à la prudence et à la vérification systématique.</p>
+          <div class="flex items-center gap-3 mb-5"><input type="checkbox" id="dontShowAgain" class="w-4 h-4 accent-amber-500"><label class="text-sm text-gray-300">Ne plus afficher</label></div>
+          <button id="closeWarningBtn" class="bg-amber-600 hover:bg-amber-700 w-full py-2 rounded-xl font-bold">J'ai compris, je vérifierai les textes</button>
+        </div>
+      `;
+      document.body.appendChild(overlay);
+      document.getElementById('closeWarningBtn').onclick = () => {
+        if (document.getElementById('dontShowAgain').checked) localStorage.setItem('academie_ia_warning', 'true');
+        overlay.remove();
+      };
     }
-    overlay.remove();
-  };
-}
+    setTimeout(showVigilancePopup, 500);
 
-// Afficher le pop-up au chargement de la page
-setTimeout(showWarningPopup, 500);
+    // ======================== ÉTAT DE L'APPLICATION ========================
+    let appState = {
+      currentCase: null,
+      generatedCases: 0,
+      totalScore: 0,
+      attempts: 0,
+      mode: "etudiant",
+      timerInterval: null,
+      examTimeLeft: 0,
+      isExamActive: false,
+      weakMap: new Map()
+    };
 
-// ======================== CONFIGURATION API MISTRAL AI ========================
-const MISTRAL_API_KEY = 'TSTlYdHui4PAsQLyaJJhJVjzZVt4ROKz';
-const MISTRAL_API_URL = 'https://api.mistral.ai/v1/chat/completions';
-
-// ======================== TEXTES OFFICIELS CAMEROUNAIS (version nettoyée) ========================
-const TEXTES_OFFICIELS = `CODE PENAL CAMEROUNAIS (LOI N°2016/007):
-- Art.84: Legitime defense - riposte proportionnee a une agression actuelle
-- Art.275: Meurtre - emprisonnement a vie
-- Art.276: Assassinat - mort (premeditation, empoisonnement, trafic d'organes)
-- Art.277: Blessures graves - 10 a 20 ans
-- Art.278: Coups mortels involontaires - 6 a 20 ans
-- Art.280: Blessures simples - 6 mois a 5 ans (ITT plus de 30 jours)
-- Art.281: Blessures legeres - 6 jours a 2 ans (ITT entre 8 et 30 jours)
-- Art.291: Arrestation/sequestration - 5 a 10 ans (10-20 ans si plus d'1 mois)
-- Art.318: Vol, abus de confiance, escroquerie - 5 a 10 ans + amende 100.000-1.000.000 F
-- Art.320: Vol aggrave - peines doublees (violences, arme, effraction, nuit)
-- Art.94: Tentative - punissable si commencement d'execution
-- Art.97: Complicite - puni comme auteur principal
-- Art.184: Detournement de biens publics - a vie si plus de 500.000 F
-- Art.74-1: Personnes morales penalement responsables
-
-CODE DE PROCEDURE PENALE (LOI N°2005/007):
-- Art.53: Flagrant delit - arrestation sans mandat possible
-- Art.92: Perquisition - avec mandat sauf flagrant delit
-- Art.99: Perquisition nocturne interdite entre 18h et 6h
-- Art.100: Nullite pour inobservation des formalites
-- Art.118-119: Garde a vue - 48h renouvelable une fois (96h max)
-- Art.221: Detention provisoire - 6 mois max en correctionnelle
-- Art.197: Commission rogatoire
-- Art.431: Delai d'appel - 10 jours
-- Art.3: Nullite absolue si atteinte aux droits de la defense
-- Art.65: Prescription - crime 10 ans, delit 3 ans, contravention 1 an`;
-
-// ======================== ÉTAT ========================
-let appState = {
-  currentCase: null,
-  seen: 0, good: 0, attempts: 0,
-  seenIds: new Set(),
-  qcmAnswered: false,
-  isGenerating: false,
-  isStreaming: false
-};
-
-function saveProgress() { 
-  try {
-    localStorage.setItem('academie_penale_mistral', JSON.stringify({ 
-      seen: appState.seen, 
-      good: appState.good, 
-      attempts: appState.attempts, 
-      seenIds: Array.from(appState.seenIds) 
-    }));
-  } catch(e) {}
-}
-
-function loadProgress() { 
-  try { 
-    const s = localStorage.getItem('academie_penale_mistral'); 
-    if(s) { 
-      const d = JSON.parse(s); 
-      appState.seen = d.seen || 0; 
-      appState.good = d.good || 0; 
-      appState.attempts = d.attempts || 0; 
-      appState.seenIds = new Set(d.seenIds || []); 
-    } 
-  } catch(e) {} 
-  updateStats(); 
-}
-
-function updateStats() { 
-  document.getElementById('seenCount').textContent = appState.seen; 
-  document.getElementById('goodCount').textContent = appState.good; 
-  const rate = appState.attempts ? Math.round((appState.good / appState.attempts) * 100) : null; 
-  document.getElementById('rateCount').textContent = rate !== null ? rate + '%' : '—'; 
-}
-
-function showToast(msg, isError = false) { 
-  const t = document.getElementById('toast'); 
-  t.textContent = msg; 
-  t.style.borderColor = isError ? 'var(--red)' : 'var(--gold)'; 
-  t.classList.add('show'); 
-  setTimeout(() => t.classList.remove('show'), 2500); 
-}
-
-// ======================== GÉNÉRATION D'UN CAS PAR MISTRAL AI ========================
-async function generateCase() {
-  if (appState.isGenerating) return;
-  appState.isGenerating = true;
-  
-  const theme = document.getElementById('themeSelect').value;
-  const difficulty = document.getElementById('difficultySelect').value;
-  const mode = document.getElementById('modeSelect').value;
-  
-  document.getElementById('badgeTheme').textContent = theme;
-  document.getElementById('badgeDifficulty').textContent = difficulty;
-  document.getElementById('badgeMode').textContent = mode === 'qcm' ? 'QCM' : (mode === 'redaction' ? 'Rédaction' : 'Mixte');
-  document.getElementById('caseTitle').textContent = 'Génération en cours...';
-  document.getElementById('caseScenario').textContent = 'L\'IA prépare un nouveau cas pratique...';
-  document.getElementById('caseBody').innerHTML = `
-    <div style="text-align:center; padding:40px;">
-      <div class="loading" style="width:32px;height:32px;margin:0 auto 16px;"></div>
-      <p>⏳ Création d'un cas pratique sur mesure...</p>
-      <p style="font-size:0.8rem; margin-top:12px;">Thème: ${theme} | Difficulté: ${difficulty} | Mode: ${mode}</p>
-    </div>
-  `;
-  document.getElementById('caseNav').classList.add('hidden');
-  document.getElementById('showCorrectionBtn').disabled = true;
-  document.getElementById('aiCorrectionBtn').disabled = true;
-  
-  const villes = ["Yaounde", "Douala", "Garoua", "Bafoussam", "Maroua", "Bamenda", "Limbe", "Bertoua", "Ebolowa", "Ngaoundere"];
-  const ville = villes[Math.floor(Math.random() * villes.length)];
-  const jour = Math.floor(Math.random() * 28) + 1;
-  const mois = ["janvier", "fevrier", "mars", "avril", "mai", "juin", "juillet", "aout", "septembre", "octobre", "novembre", "decembre"][Math.floor(Math.random() * 12)];
-  
-  const prompt = `Genere un cas pratique de ${difficulty} en ${theme} (droit camerounais). 
-Lieu: ${ville}, date: ${jour} ${mois} 2024. Mode: ${mode === 'mixte' ? 'QCM + redaction' : mode}.
-Cree un scenario realiste avec prenoms et noms camerounais.
-Reponds UNIQUEMENT au format JSON valide, sans aucun texte avant ou apres:
-
-{
-  "title": "titre du cas",
-  "scenario": "scenario detaille",
-  "questions": ["question1", "question2", "question3"],
-  "qcm": {
-    "prompt": "question du QCM",
-    "options": ["option A", "option B", "option C", "option D"],
-    "answer": 0,
-    "explanation": "explication"
-  },
-  "correction": "correction modele complete avec references aux articles"
-}`;
-
-  try {
-    const response = await fetch(MISTRAL_API_URL, {
-      method: 'POST',
-      headers: { 
-        'Content-Type': 'application/json', 
-        'Authorization': `Bearer ${MISTRAL_API_KEY}`
-      },
-      body: JSON.stringify({
-        model: 'mistral-small-latest',
-        messages: [{ role: 'user', content: prompt }],
-        max_tokens: 1200,
-        temperature: 0.7
-      })
-    });
-    
-    if (!response.ok) {
-      const errorText = await response.text();
-      throw new Error(`API Error ${response.status}: ${errorText.substring(0, 200)}`);
+    function saveStats() { 
+      localStorage.setItem("academie_stats", JSON.stringify({ 
+        generatedCases: appState.generatedCases, 
+        totalScore: appState.totalScore, 
+        attempts: appState.attempts, 
+        weakMap: Object.fromEntries(appState.weakMap) 
+      }));
     }
     
-    const data = await response.json();
-    let content = data.choices?.[0]?.message?.content || '';
+    function loadStats() { 
+      try { 
+        let d = JSON.parse(localStorage.getItem("academie_stats")); 
+        if (d) { 
+          appState.generatedCases = d.generatedCases || 0; 
+          appState.totalScore = d.totalScore || 0; 
+          appState.attempts = d.attempts || 0; 
+          appState.weakMap = new Map(Object.entries(d.weakMap || {})); 
+        } 
+      } catch(e) {} 
+      updateUIStats(); 
+      renderWeakTopics(); 
+    }
     
-    content = content.trim();
-    const jsonMatch = content.match(/\{[\s\S]*\}/);
-    if (jsonMatch) {
-      let caseData;
+    function updateUIStats() { 
+      document.getElementById("statCases").innerText = appState.generatedCases; 
+      document.getElementById("statGood").innerText = appState.totalScore; 
+      let rate = appState.attempts ? Math.round((appState.totalScore / appState.attempts) * 100) : null; 
+      document.getElementById("statRate").innerText = rate ? rate + "%" : "—"; 
+    }
+    
+    function addErrorTheme(theme) { 
+      let c = appState.weakMap.get(theme) || 0; 
+      appState.weakMap.set(theme, c + 1); 
+      saveStats(); 
+      renderWeakTopics(); 
+    }
+    
+    function renderWeakTopics() { 
+      let div = document.getElementById("weakTopics"); 
+      div.innerHTML = ""; 
+      for (let [t, cnt] of appState.weakMap.entries()) 
+        if (cnt > 0) div.innerHTML += `<span class="bg-red-900/50 text-red-300 px-2 py-1 rounded-full text-xs">${t} (${cnt} erreurs)</span>`; 
+      if (appState.weakMap.size === 0) div.innerHTML = "<span class='text-gray-500'>Aucune erreur enregistrée</span>";
+    }
+
+    // ======================== GÉNÉRATION 100% ALÉATOIRE DES CAS ========================
+    const MISTRAL_API_KEY = "TSTlYdHui4PAsQLyaJJhJVjzZVt4ROKz";
+    
+    async function generateRandomCase() {
+      const theme = document.getElementById("themeFilter").value;
+      const difficulty = document.getElementById("difficultyFilter").value;
+      const mode = document.getElementById("modeSelect").value;
+      
+      const villes = ["Yaoundé", "Douala", "Garoua", "Bafoussam", "Maroua", "Bamenda", "Limbe", "Bertoua", "Ebolowa", "Ngaoundéré", "Kribi", "Buea"];
+      const noms = ["Njanga", "Mbarga", "Nkoa", "Essomba", "Ngo", "Abessolo", "Biyidi", "Mvondo", "Tchatchouang", "Kamga"];
+      const prenoms = ["Jean", "Paul", "Marie", "Claire", "François", "Sophie", "David", "Judith", "Emmanuel", "Christiane"];
+      const ville = villes[Math.floor(Math.random() * villes.length)];
+      const jour = Math.floor(Math.random() * 28) + 1;
+      const mois = ["janvier", "février", "mars", "avril", "mai", "juin", "juillet", "août", "septembre", "octobre", "novembre", "décembre"][Math.floor(Math.random() * 12)];
+      const prenom = prenoms[Math.floor(Math.random() * prenoms.length)];
+      const nom = noms[Math.floor(Math.random() * noms.length)];
+      
+      const prompt = `Génère un cas pratique UNIQUE et ALÉATOIRE de droit camerounais. Thème: ${theme}, difficulté: ${difficulty}. 
+      Lieu: ${ville}, date: ${jour} ${mois} 2025, protagoniste: ${prenom} ${nom}.
+      Crée un scénario réaliste, complexe, avec faits détaillés, éléments matériels, intentionnels, contexte procédural.
+      
+      Réponds UNIQUEMENT au format JSON valide sans aucun texte avant ou après:
+      {
+        "title": "titre du cas (accrocheur)",
+        "scenario": "description détaillée des faits (150-250 mots) avec lieu, date, personnages, circonstances",
+        "questions": ["question juridique 1", "question juridique 2", "question juridique 3"],
+        "expected_qualif": "qualification pénale attendue",
+        "expected_peine": "peine encourue selon le code"
+      }`;
+      
       try {
-        caseData = JSON.parse(jsonMatch[0]);
-      } catch(e) {
-        console.error("JSON parse error:", e);
-        caseData = {
-          title: `Cas pratique de ${theme} à ${ville}`,
-          scenario: `Le ${jour} ${mois} 2024, à ${ville}, un individu commet une infraction.`,
-          questions: ["Qualifiez les faits.", "Quelle peine encourt l'auteur ?", "Quels sont les textes applicables ?"],
-          qcm: { prompt: "Quelle est la qualification pénale ?", options: ["Option A", "Option B", "Option C", "Option D"], answer: 0, explanation: "Explication selon le Code pénal." },
-          correction: `Correction selon le Code pénal camerounais.`
+        const response = await fetch("https://api.mistral.ai/v1/chat/completions", {
+          method: "POST",
+          headers: { "Content-Type": "application/json", "Authorization": `Bearer ${MISTRAL_API_KEY}` },
+          body: JSON.stringify({
+            model: "mistral-small-latest",
+            messages: [{ role: "user", content: prompt }],
+            temperature: 0.9,
+            max_tokens: 1500
+          })
+        });
+        
+        if (!response.ok) throw new Error(`API erreur ${response.status}`);
+        const data = await response.json();
+        let content = data.choices[0].message.content;
+        const jsonMatch = content.match(/\{[\s\S]*\}/);
+        if (!jsonMatch) throw new Error("Format JSON invalide");
+        const caseData = JSON.parse(jsonMatch[0]);
+        
+        return {
+          id: Date.now(),
+          theme: theme,
+          difficulty: difficulty,
+          mode: mode,
+          title: caseData.title || `Cas ${theme} - ${ville}`,
+          scenario: caseData.scenario || `Le ${jour} ${mois} 2025 à ${ville}, ${prenom} ${nom} est impliqué dans une affaire.`,
+          questions: caseData.questions || ["Qualifiez juridiquement les faits.", "Quels sont les éléments constitutifs de l'infraction ?", "Quelle peine est encourue ?"],
+          expectedQualif: caseData.expected_qualif || "À déterminer selon le code",
+          expectedPeine: caseData.expected_peine || "Référer aux articles applicables"
+        };
+      } catch(err) {
+        console.error("Erreur génération:", err);
+        return {
+          id: Date.now(), theme, difficulty, mode,
+          title: `Cas pratique sur ${theme} (${difficulty})`,
+          scenario: `Le ${jour} ${mois} 2025, à ${ville}, ${prenom} ${nom} a commis des faits susceptibles de qualification pénale. Les circonstances sont ${difficulty === "Avancé" ? "complexes avec circonstances aggravantes" : "simples"}.`,
+          questions: ["1. Quelle qualification pénale retenez-vous ?", "2. Quels articles du code pénal ou de procédure s'appliquent ?", "3. Quelle peine ou nullité encourue ?"],
+          expectedQualif: "À analyser selon les textes officiels",
+          expectedPeine: "Variable selon les circonstances"
         };
       }
+    }
+
+    // ======================== CORRECTION PAR IA ========================
+    async function getAICorrection(userAnswer, caseContext, theme) {
+      const prompt = `Tu es un professeur de droit pénal camerounais. Tu dois répondre en t'appuyant sur ta connaissance des codes camerounais (Code pénal Loi 2016/007, Code de procédure pénale Loi 2005/007).
       
-      const newCase = {
-        id: Date.now(),
-        theme: theme,
-        difficulty: difficulty,
-        mode: mode,
-        title: caseData.title || `Cas pratique sur ${theme}`,
-        scenario: caseData.scenario || `Scénario à ${ville} le ${jour} ${mois} 2024.`,
-        questions: caseData.questions || ["Qualifiez les faits.", "Quelle peine encourt l'auteur ?", "Quels sont les textes applicables ?"],
-        qcm: caseData.qcm || {
-          prompt: "Quelle est la qualification pénale ?",
-          options: ["Option A", "Option B", "Option C", "Option D"],
-          answer: 0,
-          explanation: "Explication selon le Code pénal camerounais."
-        },
-        correction: caseData.correction || `<strong>Qualification :</strong> Selon le Code pénal camerounais.<br><div class="doc-ref">Reference : Code penal camerounais (Loi n°2016/007)</div>`
-      };
+      Structure OBLIGATOIRE de la correction:
+      1. Rappel des faits
+      2. Qualification juridique
+      3. Élément légal (existence d'une incrimination)
+      4. Élément matériel (action ou omission)
+      5. Élément moral (intention ou faute)
+      6. Application du droit au cas d'espèce
+      7. Solution juridique
+      8. Peines encourues
+      9. Procédure applicable
+      10. Articles exacts cités (numéro et contenu)
       
-      appState.currentCase = newCase;
-      appState.qcmAnswered = false;
+      CAS: ${caseContext}
+      RÉPONSE DE L'ÉTUDIANT: ${userAnswer || "Aucune réponse fournie"}
       
-      if (!appState.seenIds.has(newCase.id)) {
-        appState.seenIds.add(newCase.id);
-        appState.seen++;
-        saveProgress();
-        updateStats();
+      Donne une correction détaillée, pédagogique, avec citations précises des articles.
+      Si tu n'es pas certain d'un article, mentionne "À vérifier dans le code officiel".`;
+      
+      try {
+        const response = await fetch("https://api.mistral.ai/v1/chat/completions", {
+          method: "POST",
+          headers: { "Content-Type": "application/json", "Authorization": `Bearer ${MISTRAL_API_KEY}` },
+          body: JSON.stringify({
+            model: "mistral-small-latest",
+            messages: [{ role: "user", content: prompt }],
+            temperature: 0.3,
+            max_tokens: 2000
+          })
+        });
+        if (!response.ok) throw new Error();
+        const data = await response.json();
+        let reply = data.choices[0].message.content;
+        reply += "\n\n---\n⚠️ **Rappel** : L'IA peut commettre des erreurs. Vérifiez toujours les citations dans les codes officiels accessibles via les liens ci-dessus.";
+        return reply;
+      } catch(err) {
+        return "Erreur de connexion à l'API. Veuillez réessayer. Correction basée sur les textes officiels consultables dans les liens fournis.";
+      }
+    }
+
+    // ======================== AFFICHAGE ET RENDU ========================
+    async function renderCase(c) {
+      appState.currentCase = c;
+      document.getElementById("themeBadge").innerHTML = c.theme;
+      document.getElementById("difficultyBadge").innerHTML = c.difficulty;
+      document.getElementById("modeBadge").innerHTML = c.mode === "etudiant" ? "Étudiant" : (c.mode==="examen"?"Examen":(c.mode==="magistrat"?"Magistrat":"Concours"));
+      document.getElementById("caseTitle").innerText = c.title;
+      document.getElementById("caseScenario").innerText = c.scenario;
+      
+      let container = document.getElementById("dynamicContent");
+      let isExamMode = (appState.mode === "examen" && appState.isExamActive);
+      
+      let html = `<div class="space-y-5"><div class="bg-gray-700/30 p-5 rounded-lg border-l-4 border-amber-500"><p class="font-bold text-amber-300 mb-2">⚖️ Questions juridiques :</p><ul class="list-disc pl-5 space-y-1 text-gray-200">${c.questions.map(q=>`<li>${q}</li>`).join("")}</ul></div>`;
+      
+      if (!isExamMode) {
+        html += `<div><label class="font-semibold block mb-2">✍️ Votre analyse juridique :</label><textarea id="studentAnswer" rows="6" class="w-full bg-gray-700 border border-gray-600 rounded-lg p-3 text-sm" placeholder="Rédigez votre solution selon la méthode : qualification, articles, peine, procédure..."></textarea><div class="text-right text-xs text-gray-400 mt-1" id="wordCount"></div></div>`;
+        html += `<div class="flex flex-wrap gap-3 mt-2"><button id="getCorrectionBtn" class="bg-indigo-700 hover:bg-indigo-800 px-5 py-2 rounded-md text-sm font-medium">✨ Obtenir la correction IA</button><button id="modelCorrectionBtn" class="bg-gray-600 hover:bg-gray-500 px-5 py-2 rounded-md text-sm font-medium">📖 Correction attendue</button></div>`;
+      } else {
+        html += `<div class="bg-red-900/30 p-4 rounded-lg border border-red-700"><p class="text-red-300 font-bold">⏱️ MODE EXAMEN : réponse chronométrée</p><textarea id="examAnswer" rows="8" class="w-full bg-gray-700 border border-gray-600 p-3 rounded-lg mt-2" placeholder="Rédigez votre copie..."></textarea><button id="submitExamBtn" class="bg-amber-700 mt-4 px-5 py-2 rounded-lg">Rendre copie & notation</button></div>`;
       }
       
-      renderCase(newCase);
-      document.getElementById('showCorrectionBtn').disabled = false;
-      document.getElementById('aiCorrectionBtn').disabled = false;
-      document.getElementById('caseNav').classList.remove('hidden');
-      document.getElementById('casePool').textContent = `Genere par Mistral AI · Cas n°${appState.seen + 1}`;
-      showToast(`Cas genere : "${newCase.title}"`);
-    } else {
-      throw new Error('Format JSON invalide');
+      html += `</div>`;
+      container.innerHTML = html;
+      
+      if (!isExamMode) {
+        document.getElementById("getCorrectionBtn")?.addEventListener("click", () => handleGetCorrection(c));
+        document.getElementById("modelCorrectionBtn")?.addEventListener("click", () => showModelCorrection(c));
+        let ta = document.getElementById("studentAnswer");
+        if (ta) ta.addEventListener("input", () => { let wc = ta.value.trim().split(/\s+/).filter(w=>w).length; if(document.getElementById("wordCount")) document.getElementById("wordCount").innerText = wc+" mots"; });
+      } else {
+        document.getElementById("submitExamBtn")?.addEventListener("click", () => handleExamSubmit(c));
+      }
     }
-  } catch (err) {
-    console.error('Erreur Mistral API:', err);
-    document.getElementById('caseBody').innerHTML = `
-      <div style="text-align:center; padding:40px; color: var(--red);">
-        <div style="font-size: 48px; margin-bottom: 16px;">⚠️</div>
-        <p>Erreur: ${err.message}</p>
-        <p style="margin-top: 12px;">Verifiez votre connexion et votre clé API Mistral.</p>
-        <button class="btn-gold" id="retryBtn" style="margin-top: 20px;">🔄 Reessayer</button>
+    
+    async function handleGetCorrection(c) {
+      let studentAns = document.getElementById("studentAnswer")?.value || "Aucune réponse";
+      let context = `Titre: ${c.title}\nScénario: ${c.scenario}\nQuestions: ${c.questions.join(", ")}`;
+      let correction = await getAICorrection(studentAns, context, c.theme);
+      document.getElementById("correctionPanel").innerHTML = `<div class="bg-indigo-900/40 p-5 rounded-xl border-l-4 border-indigo-500"><p class="font-bold text-indigo-300">✨ Correction IA (Mistral AI)</p><div class="text-sm mt-3 leading-relaxed whitespace-pre-wrap">${correction}</div><div class="mt-3 text-xs text-gray-400 border-t border-gray-600 pt-2">⚠️ Vérifiez les citations dans les codes officiels disponibles via les liens ci-dessus.</div></div>`;
+      document.getElementById("correctionPanel").classList.remove("hidden");
+    }
+    
+    function showModelCorrection(c) {
+      let html = `<div class="bg-gray-700 p-5 rounded-xl"><p class="font-bold text-amber-300 text-lg">📚 Correction attendue (référence)</p>
+      <div class="mt-3 space-y-2 text-gray-200">
+        <p><strong>1. Rappel des faits :</strong> ${c.scenario.substring(0, 200)}</p>
+        <p><strong>2. Qualification juridique :</strong> ${c.expectedQualif}</p>
+        <p><strong>3-5. Éléments :</strong> L'infraction est constituée en ses éléments légal, matériel et moral.</p>
+        <p><strong>6. Application :</strong> Les faits correspondent aux textes.</p>
+        <p><strong>7. Solution :</strong> Condamnation ou relaxe selon preuves.</p>
+        <p><strong>8. Peine encourue :</strong> ${c.expectedPeine}</p>
+        <p><strong>9. Procédure :</strong> Flagrance ou enquête préliminaire, GAV selon art. 118-119 CPP.</p>
+        <p><strong>10. Articles :</strong> Consultez le Code pénal et le CPP accessibles via les liens ci-dessus.</p>
       </div>
-    `;
-    const retryBtn = document.getElementById('retryBtn');
-    if (retryBtn) retryBtn.onclick = () => generateCase();
-    showToast('Erreur de generation', true);
-  }
-  
-  appState.isGenerating = false;
-}
-
-// ======================== AFFICHAGE ========================
-function renderCase(c) {
-  document.getElementById('badgeTheme').textContent = c.theme;
-  document.getElementById('badgeDifficulty').textContent = c.difficulty;
-  document.getElementById('badgeMode').textContent = c.mode === 'qcm' ? 'QCM' : (c.mode === 'redaction' ? 'Rédaction' : 'Mixte');
-  document.getElementById('caseTitle').textContent = c.title;
-  document.getElementById('caseScenario').textContent = c.scenario;
-  
-  let html = `<div class="section-title">📋 Questions juridiques</div><ul class="questions-list">${c.questions.map(q => `<li>${q}</li>`).join('')}</ul>`;
-  
-  if (c.mode === 'qcm' || c.mode === 'mixte') {
-    html += `<div class="section-title">❓ ${c.qcm.prompt}</div><div id="qcmArea">`;
-    c.qcm.options.forEach((opt, i) => {
-      html += `<label class="qcm-option"><input type="radio" name="qcm" value="${i}"><div class="qcm-label"><span class="qcm-letter">${String.fromCharCode(65 + i)}</span><span>${opt}</span></div></label>`;
-    });
-    html += `<div id="qcmFeedback" class="hidden"></div><button class="btn-gold" id="checkQcmBtn" style="margin-top:12px">✔ Valider</button></div>`;
-  }
-  
-  if (c.mode === 'redaction' || c.mode === 'mixte') {
-    html += `<div class="section-title">✏️ Votre analyse juridique</div><textarea id="redactionArea" placeholder="Redigez votre reponse en suivant la methode :&#10;1. Rappel des faits&#10;2. Qualification juridique&#10;3. Application des textes&#10;4. Solution et peine encourue"></textarea><div class="word-count" id="wordCount">0 mots</div>`;
-  }
-  
-  html += `<div id="correctionBlock" class="hidden"></div>`;
-  document.getElementById('caseBody').innerHTML = html;
-  
-  if (c.mode === 'qcm' || c.mode === 'mixte') {
-    document.querySelectorAll('input[name="qcm"]').forEach(r => r.onchange = () => { const btn = document.getElementById('checkQcmBtn'); if (btn) btn.disabled = false; });
-    const btn = document.getElementById('checkQcmBtn');
-    if (btn) { btn.disabled = true; btn.onclick = () => checkQCM(c); }
-  }
-  
-  if (c.mode === 'redaction' || c.mode === 'mixte') {
-    const ta = document.getElementById('redactionArea');
-    if (ta) ta.oninput = () => { const wc = document.getElementById('wordCount'); const words = ta.value.trim().split(/\s+/).filter(w => w).length; wc.textContent = words + ' mots'; };
-  }
-}
-
-function checkQCM(c) {
-  if (appState.qcmAnswered) return;
-  const selected = document.querySelector('input[name="qcm"]:checked');
-  const fb = document.getElementById('qcmFeedback');
-  if (!selected) { fb.textContent = 'Veuillez sélectionner une réponse'; fb.classList.remove('hidden'); fb.className = 'feedback bad'; return; }
-  appState.qcmAnswered = true;
-  appState.attempts++;
-  const isCorrect = parseInt(selected.value) === c.qcm.answer;
-  if (isCorrect) appState.good++;
-  saveProgress();
-  updateStats();
-  
-  document.querySelectorAll('.qcm-option').forEach((opt, i) => {
-    opt.classList.add('locked');
-    opt.querySelector('input').disabled = true;
-    if (i === c.qcm.answer) opt.classList.add('correct');
-    else if (i === parseInt(selected.value) && !isCorrect) opt.classList.add('wrong');
-  });
-  
-  fb.classList.remove('hidden');
-  fb.className = isCorrect ? 'feedback good' : 'feedback bad';
-  fb.innerHTML = isCorrect ? `✅ ${c.qcm.explanation}` : `❌ ${c.qcm.explanation}`;
-  const btn = document.getElementById('checkQcmBtn');
-  if (btn) btn.disabled = true;
-  showToast(isCorrect ? 'Bonne reponse !' : 'Mauvaise reponse', !isCorrect);
-}
-
-function showStaticCorrection() {
-  if (!appState.currentCase) return;
-  const block = document.getElementById('correctionBlock');
-  block.innerHTML = `<div class="section-title">📖 Correction modèle</div><div class="static-correction">${appState.currentCase.correction}<br><br><div class="doc-ref">Reference : Code penal camerounais (Loi n°2016/007) / Code de procedure penale (Loi n°2005/007)</div></div>`;
-  block.classList.remove('hidden');
-  block.scrollIntoView({ behavior: 'smooth' });
-}
-
-// ======================== CORRECTION IA MISTRAL ========================
-async function showAICorrection() {
-  if (!appState.currentCase || appState.isStreaming) return;
-  appState.isStreaming = true;
-  const block = document.getElementById('correctionBlock');
-  block.innerHTML = `<div class="section-title">✨ Correction IA personnalisee (Mistral AI)</div><div class="ai-correction"><div class="ai-header"><div class="ai-icon">⚖️</div><div><strong>Consultation des textes officiels... <span class="loading"></span></strong></div></div><p>Analyse en cours...</p></div>`;
-  block.classList.remove('hidden');
-  document.getElementById('aiCorrectionBtn').disabled = true;
-  
-  const userAnswer = document.getElementById('redactionArea') ? document.getElementById('redactionArea').value : '';
-  const c = appState.currentCase;
-  
-  const prompt = `Tu es professeur de droit penal camerounais.
-
-TEXTES OFFICIELS CAMEROUNAIS:
-${TEXTES_OFFICIELS}
-
-CAS PRATIQUE:
-Titre: ${c.title}
-Scenario: ${c.scenario.substring(0, 400)}
-Questions: ${c.questions.join(', ')}
-Correction modele: ${c.correction.substring(0, 300)}
-Reponse de l'etudiant: ${userAnswer || "Aucune reponse fournie"}
-
-⚠️ ATTENTION: Les articles cites par l'IA peuvent parfois etre errones. L'utilisateur est invite a verifier les references dans les textes officiels.
-
-Donne une correction complete avec:
-1. QUALIFICATION JURIDIQUE: qualification exacte + article precis
-2. CONDITIONS: enumere les conditions legales
-3. APPLICATION: applique la regle aux faits
-4. SOLUTION: decision du tribunal
-5. COMMENTAIRE: analyse la reponse de l'etudiant + conseils
-
-Cite les articles. Utilise HTML. Sois pedagogique.`;
-
-  try {
-    const response = await fetch(MISTRAL_API_URL, {
-      method: 'POST',
-      headers: { 
-        'Content-Type': 'application/json', 
-        'Authorization': `Bearer ${MISTRAL_API_KEY}`
-      },
-      body: JSON.stringify({
-        model: 'mistral-small-latest',
-        messages: [{ role: 'user', content: prompt }],
-        max_tokens: 1200,
-        temperature: 0.3
-      })
-    });
-    
-    if (!response.ok) {
-      throw new Error(`API Error ${response.status}`);
+      <div class="mt-4 text-xs text-amber-400/80 border-t border-gray-600 pt-2">⚠️ Consultez les codes intégraux via les liens pour les références exactes.</div></div>`;
+      document.getElementById("correctionPanel").innerHTML = html;
+      document.getElementById("correctionPanel").classList.remove("hidden");
     }
     
-    const data = await response.json();
-    let aiReply = data.choices?.[0]?.message?.content || "Erreur de generation.";
-    aiReply = aiReply.replace(/\n/g, '<br>');
-    const aiHtml = `<div class="ai-correction"><div class="ai-header"><div class="ai-icon">📚</div><div><strong>Correction IA - Mistral AI</strong></div></div><div style="line-height: 1.8;">${aiReply}</div><br><hr><div class="doc-ref">⚠️ <strong>Attention :</strong> L'IA peut commettre des erreurs. Veuillez vérifier les articles cités dans les textes officiels.<br>Sources : Code penal camerounais (Loi n°2016/007) - Code de procedure penale (Loi n°2005/007)</div></div>`;
-    document.querySelector('.ai-correction').outerHTML = aiHtml;
-    showToast('Correction IA generee - Verifiez les references');
-  } catch (err) {
-    console.error('Erreur Mistral API correction:', err);
-    document.querySelector('.ai-correction').innerHTML = '<p>❌ Erreur de connexion a Mistral AI. Reessayez.</p>';
-    showToast('Erreur IA', true);
-  }
-  appState.isStreaming = false;
-  document.getElementById('aiCorrectionBtn').disabled = false;
-}
-
-function resetProgress() {
-  if (confirm('Reinitialiser toute progression ?')) {
-    appState.seen = 0;
-    appState.good = 0;
-    appState.attempts = 0;
-    appState.seenIds.clear();
-    appState.qcmAnswered = false;
-    saveProgress();
-    updateStats();
-    generateCase();
-    showToast('Progression reinitialisee');
-  }
-}
-
-// ======================== EVENEMENTS ========================
-document.getElementById('randomBtn').onclick = generateCase;
-document.getElementById('showCorrectionBtn').onclick = showStaticCorrection;
-document.getElementById('aiCorrectionBtn').onclick = showAICorrection;
-document.getElementById('resetBtn').onclick = resetProgress;
-document.getElementById('themeSelect').onchange = generateCase;
-document.getElementById('difficultySelect').onchange = generateCase;
-document.getElementById('modeSelect').onchange = generateCase;
-
-// ======================== INITIALISATION ========================
-loadProgress();
-generateCase();
-</script>
+    async function handleExamSubmit(c) {
+      if (!appState.isExamActive) return;
+      let answer = document.getElementById("examAnswer")?.value;
+      clearInterval(appState.timerInterval);
+      appState.isExamActive = false;
+      document.getElementById("timerDisplay").classList.add("hidden");
+      let correction = await getAICorrection(answer, `EXAMEN: ${c.title}\n${c.scenario}`, c.theme);
+      let scoreMatch = correction.match(/(\d{1,2})\/20/);
+      let score = scoreMatch ? parseInt(scoreMatch[1]) : 12;
+      appState.attempts++;
+      appState.totalScore += score;
+      saveStats();
+      updateUIStats();
+      document.getElementById("correctionPanel").innerHTML = `<div class="bg-amber-900/40 p-5 rounded-xl"><p class="font-bold text-amber-300">📝 NOTATION & CORRECTION</p><div class="text-sm mt-2 whitespace-pre-wrap">${correction}</div><div class="mt-2 text-xs text-gray-400">Note: ${score}/20 - Enregistrée.</div></div>`;
+      document.getElementById("correctionPanel").classList.remove("hidden");
+    }
+    
+    function startExamTimer() {
+      if (appState.timerInterval) clearInterval(appState.timerInterval);
+      appState.isExamActive = true;
+      appState.examTimeLeft = 600;
+      let timerEl = document.getElementById("timerDisplay");
+      timerEl.classList.remove("hidden");
+      timerEl.innerText = `⏱️ 10:00`;
+      appState.timerInterval = setInterval(() => {
+        if (appState.examTimeLeft <= 0) {
+          clearInterval(appState.timerInterval);
+          appState.isExamActive = false;
+          timerEl.classList.add("hidden");
+          alert("Temps écoulé ! L'examen est terminé.");
+        } else {
+          appState.examTimeLeft--;
+          let min = Math.floor(appState.examTimeLeft / 60);
+          let sec = appState.examTimeLeft % 60;
+          timerEl.innerText = `⏱️ ${min}:${sec<10?'0'+sec:sec}`;
+        }
+      }, 1000);
+    }
+    
+    async function newCase() {
+      if (appState.timerInterval) clearInterval(appState.timerInterval);
+      document.getElementById("dynamicContent").innerHTML = `<div class="text-center py-12"><div class="animate-spin rounded-full h-8 w-8 border-b-2 border-amber-500 mx-auto"></div><p class="mt-3 text-gray-400">Génération aléatoire d'un cas pratique par l'IA...</p></div>`;
+      document.getElementById("correctionPanel").classList.add("hidden");
+      
+      const newC = await generateRandomCase();
+      newC.mode = document.getElementById("modeSelect").value;
+      appState.mode = newC.mode;
+      appState.currentCase = newC;
+      appState.generatedCases++;
+      saveStats();
+      updateUIStats();
+      document.getElementById("activeModeLabel").innerText = appState.mode === "etudiant" ? "Étudiant" : (appState.mode === "examen" ? "Examen" : (appState.mode === "magistrat" ? "Magistrat" : "Concours"));
+      
+      if (appState.mode === "examen") startExamTimer();
+      else { appState.isExamActive = false; document.getElementById("timerDisplay")?.classList.add("hidden"); }
+      
+      await renderCase(newC);
+    }
+    
+    // Événements principaux
+    document.getElementById("newCaseBtn").onclick = () => newCase();
+    document.getElementById("resetStatsBtn").onclick = () => {
+      if (confirm("Réinitialiser toutes les statistiques ?")) {
+        appState.generatedCases = 0;
+        appState.totalScore = 0;
+        appState.attempts = 0;
+        appState.weakMap.clear();
+        saveStats();
+        updateUIStats();
+        renderWeakTopics();
+      }
+    };
+    document.getElementById("clearMemory").onclick = () => {
+      appState.weakMap.clear();
+      saveStats();
+      renderWeakTopics();
+    };
+    document.getElementById("exportPDF").onclick = () => {
+      html2pdf().from(document.querySelector(".max-w-7xl")).save("AcademiePenale_Cas.pdf");
+    };
+    document.getElementById("speechScenario").onclick = () => {
+      if (appState.currentCase) {
+        let utterance = new SpeechSynthesisUtterance(appState.currentCase.scenario);
+        utterance.lang = "fr-FR";
+        window.speechSynthesis.cancel();
+        window.speechSynthesis.speak(utterance);
+      }
+    };
+    
+    // Chargement initial
+    loadStats();
+    newCase();
+  </script>
 </body>
 </html>
